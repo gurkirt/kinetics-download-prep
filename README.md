@@ -5,10 +5,10 @@ Code is modified from [ActivityNet Crawler](https://github.com/activitynet/Activ
 
 ## What is different
 Orignal [Crawler](https://github.com/activitynet/ActivityNet/tree/master/Crawler/Kinetics) store videos in respective label directories. However, there is an overlap among the subsets and labels (class names) are changed, e.g. `passing american football (not in-game)` renamed to `passing American football (not in-game)` from 600 to 700, or class is made more fine-grained, e.g. `picking fruit` into multiple subclasses.
-Which leads copy of same videos in different subfolder/directories.
+Which leads to multiple duplicate copies of some videos in different subfolder/directories.
 
 Since we have labels in `.csv` files, then we do not need to store videos in respective label directories. 
-It provides tow benefits, i) avoid same video being stored under different folder, i.e. no duplicate copies of same videos ii) directory structure is simple.
+It provides two benefits, i) avoid same video being stored under different folder, i.e. no duplicate copies ii) directory structure is simple, i.e. all videos are stored under single directory.
 
 ## Usage
 First, clone this repository and make sure that all the submodules are also cloned properly.

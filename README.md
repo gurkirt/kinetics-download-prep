@@ -26,9 +26,49 @@ conda install joblib
 conda install pandas
 conda install sqlite
 conda install zlib
+conda install -menpo ffmpeg
 pip install --upgrade youtube-dl
 ```
 
-Finally, download a dataset split by calling:
+### Re-orgnise existing videos
+Use `reorg_kinetics_videos.py` to reorgnise existing videos from `videos_dir`. 
+
 ```
-mkdir <data_dir>; python download.py {dataset_split}.csv <data_dir>
+python reorg_kinetics_videos.py <videos_dir> <dst_dir>
+```
+
+If `dst_dir` doesn't exist the it will create it
+
+
+### Download videos
+
+Now, you can download the reminaing or all dataset splits by calling:
+
+```
+mkdir <output_dir>; python download.py {dataset_split}.csv <output_dir>
+```
+
+There is `old_dir` directory name at the start of the script. 
+It is to if you want to keep seprate old and new videos. 
+While checking for download, we will check if video files already exists in `old_dir` or `output_dir`, if it does then we don't download it. If that is the case then `old_dir` could be `= videos_dir` after re-org.
+
+### Frame dumps
+
+```
+python frame_dumps.py <videos_dir> <output_dir> --fps=25 
+```
+
+Extract frames at particular frame rate (`--fps=number`) or default (`--fps=0`)
+
+## TODO
+### Downscale videos
+Smallest side to 256. Skeleton is already there in `downscale_videos.py`.
+### Fast loading into Python
+Use `python-ffmpeg` to load videos. Trial there in `load_frame_eg.py`, but it doesn't work that fast.
+
+Try alternative ways to load video quick.
+
+Extend it to video chunk loading not the whole video. Should be faster but no easy way to do it other than loading from frame dumps.
+
+
+

@@ -5,12 +5,15 @@ import os
 import shutil
 import subprocess
 import uuid
+import pdb
+import ffmpeg
 from collections import OrderedDict
 
 from joblib import delayed
 from joblib import Parallel
 import pandas as pd
 
+old_dir = '/mnt/mercury-alpha/kinetics/old_videos/'
 
 def construct_video_filename(row, dirname, trim_format='%06d'):
     """Given a dataset row, this function constructs the
@@ -29,6 +32,7 @@ def download_clip(video_identifier, output_filename,
                   tmp_dir='/tmp/kinetics',
                   num_attempts=5,
                   url_base='https://www.youtube.com/watch?v='):
+    
     """Download a video from youtube if exists and is not blocked.
 
     arguments:
@@ -51,6 +55,8 @@ def download_clip(video_identifier, output_filename,
 
     status = False
     # Construct command line for getting the direct video link.
+    # download_clip
+    
     tmp_filename = os.path.join(tmp_dir,
                                 '%s.%%(ext)s' % uuid.uuid4())
     command = ['youtube-dl',
@@ -59,6 +65,7 @@ def download_clip(video_identifier, output_filename,
                '-o', '"%s"' % tmp_filename,
                '"%s"' % (url_base + video_identifier)]
     command = ' '.join(command)
+    # print(command)
     attempts = 0
     while True:
         try:
@@ -68,27 +75,39 @@ def download_clip(video_identifier, output_filename,
             attempts += 1
             if attempts == num_attempts:
                 return status, err.output
-        else:
-            break
+            else:
+                continue
+        break
 
     tmp_filename = glob.glob('%s*' % tmp_filename.split('.')[0])[0]
-    # Construct command to trim the videos (ffmpeg required).
+    
+
+    # if tmp_filename
+    
     command = ['ffmpeg',
                '-i', '"%s"' % tmp_filename,
                '-ss', str(start_time),
                '-t', str(end_time - start_time),
-               '-c:v', 'libx264', '-c:a', 'copy',
+               '-c:v', 'libx264',
+               '-c:a', 'copy',
                '-threads', '1',
                '-loglevel', 'panic',
                '"%s"' % output_filename]
+
+            #    '-filter:v scale="trunc(oh*a/2)*2:256"',
+    
     command = ' '.join(command)
+    # print(command)
+    # pdb.set_trace()
     try:
         output = subprocess.check_output(command, shell=True,
                                          stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as err:
+        print(err.output, status)
         return status, err.output
 
     # Check if the video was successfully saved.
+    # pdb.set_trace()
     status = os.path.exists(output_filename)
     os.remove(tmp_filename)
     return status, 'Downloaded'
@@ -97,17 +116,19 @@ def download_clip(video_identifier, output_filename,
 def download_clip_wrapper(row, dirname, trim_format, tmp_dir):
     """Wrapper for parallel processing purposes. label_to_dir"""
     output_filename = construct_video_filename(row, dirname, trim_format)
+    old_filename = construct_video_filename(row, old_dir, trim_format)
     clip_id = os.path.basename(output_filename).split('.mp4')[0]
     
-    if os.path.exists(output_filename):
+    
+    if os.path.exists(output_filename) or os.path.exists(old_filename):
         print('exists', output_filename)
-        status = tuple([clip_id, True, 'Exists'])
+        status = tuple([clip_id, str(True), 'Exists'])
         return status
 
     downloaded, log = download_clip(row['video-id'], output_filename,
                                     row['start-time'], row['end-time'],
                                     tmp_dir=tmp_dir)
-    status = tuple([clip_id, downloaded, log])
+    status = tuple([clip_id, str(downloaded), log])
     return status
 
 
@@ -142,6 +163,7 @@ def main(input_csv, output_dir,
          trim_format='%06d', num_jobs=24, tmp_dir='/tmp/kinetics',
          drop_duplicates=False):
 
+    print(input_csv)
     # Reading and parsing Kinetics.
     dataset = parse_kinetics_annotations(input_csv)
 
@@ -155,11 +177,10 @@ def main(input_csv, output_dir,
 
     # Clean tmp dir.
     shutil.rmtree(tmp_dir)
-
+    
     # Save download report.
-    with open('download_report.json', 'w') as fobj:
-        fobj.write(json.dumps(status_lst))
-
+    # with open('download_report.json', 'w') as fobj:
+    #     json.dump( status_lst, fobj)
 
 if __name__ == '__main__':
     description = 'Helper script for downloading and trimming kinetics videos.'

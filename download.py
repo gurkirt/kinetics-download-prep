@@ -81,7 +81,6 @@ def download_clip(video_identifier, output_filename,
                 continue
         break
 
-
     command = ['ffmpeg',
                '-ss', str(start_time),
                '-t', str(end_time - start_time),

@@ -7,30 +7,34 @@ import subprocess
 from joblib import delayed
 from joblib import Parallel
 
+
 def convert(videoname, video_dir, output_dir, fps):
     video_file = os.path.join(video_dir, videoname)
     frames_dir = os.path.join(output_dir, videoname[:-4])
-    
+
     if not os.path.exists(frames_dir):
         os.makedirs(frames_dir)
 
     imglist = os.listdir(frames_dir)
     imglist = [img for img in imglist if img.endswith('.jpg')]
 
-    if len(imglist)<10: # very few or no frames try extracting againg
-        if fps>0:
-            command = 'ffmpeg -loglevel panic -i {} -q:v 2 -r {} {}/%06d'.format(video_file, fps, frames_dir)
+    if len(imglist) < 10:  # very few or no frames try extracting againg
+        if fps > 0:
+            command = 'ffmpeg -loglevel panic -i {} -q:v 2 -r {} {}/%06d'.format(
+                video_file, fps, frames_dir)
         else:
-            command = 'ffmpeg -loglevel panic -i {} -q:v 2 {}/%06d'.format(video_file, frames_dir)
+            command = 'ffmpeg -loglevel panic -i {} -q:v 2 {}/%06d'.format(
+                video_file, frames_dir)
 
         try:
-            output = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
+            output = subprocess.check_output(
+                command, shell=True, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as err:
             return err.output
-    
+
     imglist = os.listdir(frames_dir)
     imglist = [img for img in imglist if img.endswith('.jpg')]
-    
+
     return len(imglist)
 
 
@@ -39,7 +43,7 @@ def main(video_dir, output_dir, num_jobs=20, fps=25):
 
     videos = os.listdir(video_dir)
     videos = [v for v in videos if v.endswith('.mp4')]
-    
+
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
     videos = sorted(videos)
@@ -57,6 +61,7 @@ if __name__ == '__main__':
     p.add_argument('output_dir', type=str,
                    help='Output directory where hf5 db for videos will be saved.')
     p.add_argument('-n', '--num-jobs', type=int, default=20)
-    p.add_argument('--fps', type=int, default=25, help='Frame rate at which videos to be extracted')
-   
+    p.add_argument('--fps', type=int, default=25,
+                   help='Frame rate at which videos to be extracted')
+
     main(**vars(p.parse_args()))

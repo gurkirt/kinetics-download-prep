@@ -5,7 +5,6 @@ import os
 import shutil
 import subprocess
 import uuid
-import pdb
 import ffmpeg
 from collections import OrderedDict
 
@@ -30,7 +29,6 @@ def construct_video_filename(row, dirname, trim_format='%06d'):
 
 def download_clip(video_identifier, output_filename,
                   start_time, end_time,
-                  tmp_dir='/tmp/kinetics',
                   num_attempts=5,
                   url_base='https://www.youtube.com/watch?v='):
     """Download a video from youtube if exists and is not blocked.
@@ -54,15 +52,20 @@ def download_clip(video_identifier, output_filename,
     assert len(video_identifier) == 11, 'video_identifier must have length 11'
 
     status = False
+
+
+    # check if file already exists and skip clip
+    if os.path.exists(output_filename):
+        print("Already Downloaded!")
+        return status, 'Downloaded'
+
     # Construct command line for getting the direct video link.
     # download_clip
 
-    tmp_filename = os.path.join(tmp_dir,
-                                '%s.%%(ext)s' % uuid.uuid4())
     command = ['youtube-dl',
                '--quiet', '--no-warnings',
                '-f', '18',
-               '--get-url', '"%s"' % tmp_filename,
+               '--get-url',
                '"%s"' % (url_base + video_identifier)]
     command = ' '.join(command)
     direct_download_url = None
@@ -84,8 +87,8 @@ def download_clip(video_identifier, output_filename,
     command = ['ffmpeg',
                '-ss', str(start_time),
                '-t', str(end_time - start_time),
-               '-i', "'%s'" % direct_download_url,
-               '-c:v', 'libx264', '-preset', 'ultrafast'
+               '-i', '"%s"' % direct_download_url,
+               '-c:v', 'libx264', '-preset', 'ultrafast',
                '-c:a', 'aac',
                '-threads', '1',
                '-loglevel', 'panic',
@@ -102,7 +105,7 @@ def download_clip(video_identifier, output_filename,
     return status, 'Downloaded'
 
 
-def download_clip_wrapper(row, dirname, trim_format, tmp_dir):
+def download_clip_wrapper(row, dirname, trim_format):
     """Wrapper for parallel processing purposes. label_to_dir"""
     output_filename = construct_video_filename(row, dirname, trim_format)
     old_filename = construct_video_filename(row, old_dir, trim_format)
@@ -114,8 +117,7 @@ def download_clip_wrapper(row, dirname, trim_format, tmp_dir):
         return status
 
     downloaded, log = download_clip(row['video-id'], output_filename,
-                                    row['start-time'], row['end-time'],
-                                    tmp_dir=tmp_dir)
+                                    row['start-time'], row['end-time'])
     status = tuple([clip_id, str(downloaded), log])
     return status
 
@@ -148,7 +150,7 @@ def parse_kinetics_annotations(input_csv, ignore_is_cc=False):
 
 
 def main(input_csv, output_dir,
-         trim_format='%06d', num_jobs=24, tmp_dir='/tmp/kinetics',
+         trim_format='%06d', num_jobs=24,
          drop_duplicates=False):
 
     print(input_csv)
@@ -160,13 +162,12 @@ def main(input_csv, output_dir,
         status_lst = []
         for i, row in dataset.iterrows():
             status_lst.append(download_clip_wrapper(
-                row, output_dir, trim_format, tmp_dir))
+                row, output_dir, trim_format))
     else:
         status_lst = Parallel(n_jobs=num_jobs)(delayed(download_clip_wrapper)(
-            row, output_dir, trim_format, tmp_dir) for i, row in dataset.iterrows())
+            row, output_dir, trim_format) for i, row in dataset.iterrows())
 
     # Clean tmp dir.
-    shutil.rmtree(tmp_dir)
 
     # Save download report.
     # with open('download_report.json', 'w') as fobj:
@@ -186,8 +187,6 @@ if __name__ == '__main__':
                          'filename of trimmed videos: '
                          'videoid_%0xd(start_time)_%0xd(end_time).mp4'))
     p.add_argument('-n', '--num-jobs', type=int, default=24)
-    p.add_argument('-t', '--tmp-dir', type=str,
-                   default='/mnt/data/data/DATASETS/KINETICS700/tmp')
     p.add_argument('--drop-duplicates', type=str, default='non-existent',
                    help='Unavailable at the moment')
     # help='CSV file of the previous version of Kinetics.')

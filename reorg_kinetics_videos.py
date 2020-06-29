@@ -33,21 +33,20 @@ def creation_date(path_to_file):
 
 
 def main(videos_dir, dst_dir):
-    
-    
+
     all_files = glob.glob(videos_dir+'**/*')
     all_mp4s = []
     video_names = []
-    
+
     for file in all_files:
         if file.endswith('.mp4'):
             all_mp4s.append(file)
         else:
             print(file)
-    
+
     if not os.path.isdir(dst_dir):
         os.makedirs(dst_dir)
-    
+
     print('total files', len(all_mp4s))
     repition_exists = 0
     for file in all_mp4s:
@@ -59,19 +58,19 @@ def main(videos_dir, dst_dir):
             time_src = creation_date(file)
             time_dst = creation_date(dst_file)
             repition_exists += 1
-            if time_dst>=time_src: # keep the older files or replace with older file
+            if time_dst >= time_src:  # keep the older files or replace with older file
                 shutil.move(file, dst_file)
             else:
                 print(file, dst_file)
-    
+
     print('repitited files', repition_exists)
-    
+
 
 if __name__ == '__main__':
     description = 'Helper script for re-orgnising kinetics videos'
     p = argparse.ArgumentParser(description=description)
     p.add_argument('videos_dir', type=str,
-                    help='Input directory where video exisitng in respective class folders')
+                   help='Input directory where video exisitng in respective class folders')
     p.add_argument('dst_dir', type=str,
                    help='Output directory where unique videos will be moved')
 

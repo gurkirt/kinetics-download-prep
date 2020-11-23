@@ -45,12 +45,23 @@ If `dst_dir` doesn't exist the it will create it
 Now, you can download the reminaing or all dataset splits by calling:
 
 ```
-mkdir <output_dir>; python download.py {dataset_split}.csv <output_dir>
+mkdir <output_dir>; 
 ```
 
-There is `old_dir` directory name at the start of the script. 
+To download videos from specfic set.
+
+```
+python download.py <output_dir> --input_csv={dataset_split}.csv
+```
+
+OR, you can download entire dataset with all it's versions and all of it's sets. Just do not sepcify `input_csv`, by default it will pick up `data` directory and all the `.csv` files there.
+
+```
+python download.py <output_dir> 
+```
+<!-- There is `old_dir` directory name at the start of the script. 
 It is to if you want to keep seprate old and new videos. 
-While checking for download, we will check if video files already exists in `old_dir` or `output_dir`, if it does then we don't download it. If that is the case then `old_dir` could be `= videos_dir` after re-org.
+While checking for download, we will check if video files already exists in `old_dir` or `output_dir`, if it does then we don't download it. If that is the case then `old_dir` could be `= videos_dir` after re-org. -->
 
 ### Frame dumps
 
@@ -63,6 +74,7 @@ Extract frames at particular frame rate (`--fps=number`) or default (`--fps=0`)
 ## TODO
 ### Downscale videos
 Smallest side to 256. Skeleton is already there in `downscale_videos.py`.
+
 ### Fast loading into Python
 Use `python-ffmpeg` to load videos. Trial there in `load_frame_eg.py`, but it doesn't work that fast.
 

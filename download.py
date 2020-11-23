@@ -6,8 +6,9 @@ import shutil
 import subprocess
 import uuid
 import ffmpeg
+import os
 from collections import OrderedDict
-
+from pathlib import Path
 from joblib import delayed
 from joblib import Parallel
 import pandas as pd
@@ -19,6 +20,8 @@ def construct_video_filename(row, dirname, trim_format='%06d'):
     """Given a dataset row, this function constructs the
        output filename for a given video.
     """
+    
+    # print('HHHHHEEEERRRRREEEE', row, dirname)
     basename = '%s_%s_%s.mp4' % (row['video-id'],
                                  trim_format % row['start-time'],
                                  trim_format % row['end-time'])
@@ -29,8 +32,9 @@ def construct_video_filename(row, dirname, trim_format='%06d'):
 
 def download_clip(video_identifier, output_filename,
                   start_time, end_time,
-                  num_attempts=5,
+                  num_attempts=3,
                   url_base='https://www.youtube.com/watch?v='):
+    
     """Download a video from youtube if exists and is not blocked.
 
     arguments:
@@ -84,7 +88,7 @@ def download_clip(video_identifier, output_filename,
                 continue
         break
 
-    command = ['/usr/bin/ffmpeg',
+    command = ['ffmpeg',
                '-ss', str(start_time),
                '-t', str(end_time - start_time),
                '-i', '"%s"' % direct_download_url,
@@ -95,6 +99,7 @@ def download_clip(video_identifier, output_filename,
                '"%s"' % output_filename]
 
     command = ' '.join(command)
+
     try:
         output = subprocess.check_output(command, shell=True,
                                          stderr=subprocess.STDOUT)
@@ -102,24 +107,29 @@ def download_clip(video_identifier, output_filename,
         return status, err.output
 
     status = os.path.exists(output_filename)
+    
     return status, 'Downloaded'
 
 
-def download_clip_wrapper(row, dirname, trim_format):
+def download_clip_wrapper(row, output_filename):
     """Wrapper for parallel processing purposes. label_to_dir"""
-    output_filename = construct_video_filename(row, dirname, trim_format)
-    old_filename = construct_video_filename(row, old_dir, trim_format)
-    clip_id = os.path.basename(output_filename).split('.mp4')[0]
-
-    if os.path.exists(output_filename) or os.path.exists(old_filename):
-        print('exists', output_filename)
-        status = tuple([clip_id, str(True), 'Exists'])
-        return status
+    
 
     downloaded, log = download_clip(row['video-id'], output_filename,
                                     row['start-time'], row['end-time'])
-    status = tuple([clip_id, str(downloaded), log])
+    status = tuple([str(downloaded), output_filename, log])
+
     return status
+
+def get_csv_df(input_csv):
+    df = pd.read_csv(input_csv)
+    if 'youtube_id' in df.columns:
+        columns = OrderedDict([
+            ('youtube_id', 'video-id'),
+            ('time_start', 'start-time'),
+            ('time_end', 'end-time')])
+        df.rename(columns=columns, inplace=True)
+    return df
 
 
 def parse_kinetics_annotations(input_csv, ignore_is_cc=False):
@@ -137,16 +147,60 @@ def parse_kinetics_annotations(input_csv, ignore_is_cc=False):
         Pandas with the following columns:
             'video-id', 'start-time', 'end-time', 'label-name'
     """
-    df = pd.read_csv(input_csv)
-    if 'youtube_id' in df.columns:
-        columns = OrderedDict([
-            ('youtube_id', 'video-id'),
-            ('time_start', 'start-time'),
-            ('time_end', 'end-time')])
-        df.rename(columns=columns, inplace=True)
-        if ignore_is_cc:
-            df = df.loc[:, df.columns.tolist()[:-1]]
+    if input_csv.endswith('.csv'):
+        df = get_csv_df(input_csv)
+    else:
+        input_csv_dir = input_csv
+        csv_list = os.listdir(input_csv)
+        csv_list = [f for f in csv_list if f.endswith('.csv')]
+        # print(csv_list)
+        df = None
+        for f in csv_list:
+            cdf = get_csv_df(os.path.join(input_csv_dir,f))
+            print('Loaded ', f, 'for',len(cdf), 'items')
+            if df is None:
+                df = cdf
+            else:
+                df = df.append(cdf, sort=True)
+    df = df.drop_duplicates()
+    assert df is not None, df
+
     return df
+
+def get_output_filename(row, dirname, trim_format):
+    output_filename = construct_video_filename(row, dirname, trim_format)
+    # old_filename = construct_video_filename(row, old_dir, trim_format)
+    # clip_id = os.path.basename(output_filename).split('.mp4')[0]
+    if os.path.exists(output_filename):
+        fsize = Path(output_filename).stat().st_size
+        # print('exists', output_filename, 'with file size of ',fsize, ' bytes')
+        if fsize>1:
+            return output_filename, True
+        else:
+            print('CHECK file size of ',fsize, ' bytes', output_filename)
+        
+    return output_filename, False
+
+def make_video_names(dataset, output_dir, trim_format):
+    video_name_list = {}
+    row_list = []
+    count_done = 0
+    total = len(dataset)
+    print('Total is ', total)
+    for _, row in dataset.iterrows():
+        output_filename, done = get_output_filename(row, output_dir, trim_format)
+        if not done and output_filename not in video_name_list:
+            video_name_list[output_filename] = 1
+            row_list.append([row, output_filename])
+        elif output_filename not in video_name_list:
+            video_name_list[output_filename] = 0
+            count_done += 1
+    video_name_list = [v for v in video_name_list]
+    video_name_set = list(set(video_name_list))
+    
+    print('Done {:d} out of {:d} dict count {:d} set count {:d}'.format(count_done, total, len(video_name_list), len(video_name_set)))
+
+    return row_list
 
 
 def main(input_csv, output_dir,
@@ -156,38 +210,35 @@ def main(input_csv, output_dir,
     print(input_csv)
     # Reading and parsing Kinetics.
     dataset = parse_kinetics_annotations(input_csv)
-
+    video_names = make_video_names(dataset, output_dir, trim_format)
+    print('NUMBER OF VIDEOS TO BE DOWNLOADED', len(video_names))
     # Download all clips.
-    if num_jobs == 1:
+
+    if num_jobs <= 1:
         status_lst = []
-        for i, row in dataset.iterrows():
-            status_lst.append(download_clip_wrapper(
-                row, output_dir, trim_format))
+        for row in enumerate(video_names):
+            status_lst.append(download_clip_wrapper(row[0], row[1]))
     else:
-        status_lst = Parallel(n_jobs=num_jobs)(delayed(download_clip_wrapper)(
-            row, output_dir, trim_format) for i, row in dataset.iterrows())
+        status_lst = Parallel(n_jobs=num_jobs)(delayed(download_clip_wrapper)(row[0], row[1]) for row in video_names)
 
     # Clean tmp dir.
-
     # Save download report.
     # with open('download_report.json', 'w') as fobj:
     #     json.dump( status_lst, fobj)
 
-
 if __name__ == '__main__':
     description = 'Helper script for downloading and trimming kinetics videos.'
     p = argparse.ArgumentParser(description=description)
-    p.add_argument('input_csv', type=str,
-                   help=('CSV file containing the following format: '
-                         'YouTube Identifier,Start time,End time,Class label'))
     p.add_argument('output_dir', type=str,
                    help='Output directory where videos will be saved.')
+    p.add_argument('--input_csv', type=str, default='data/',
+                   help=('CSV file containing the following format: '
+                         'YouTube Identifier,Start time,End time,Class label'))
     p.add_argument('-f', '--trim-format', type=str, default='%06d',
                    help=('This will be the format for the '
                          'filename of trimmed videos: '
                          'videoid_%0xd(start_time)_%0xd(end_time).mp4'))
-    p.add_argument('-n', '--num-jobs', type=int, default=24)
+    p.add_argument('-n', '--num-jobs', type=int, default=20)
     p.add_argument('--drop-duplicates', type=str, default='non-existent',
                    help='Unavailable at the moment')
-    # help='CSV file of the previous version of Kinetics.')
     main(**vars(p.parse_args()))

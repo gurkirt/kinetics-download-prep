@@ -12,7 +12,7 @@ from joblib import delayed
 from joblib import Parallel
 import pandas as pd
 
-old_dir = ''
+old_dir = '../videos_old/'
 
 
 def construct_video_filename(row, dirname, trim_format='%06d'):
@@ -84,7 +84,7 @@ def download_clip(video_identifier, output_filename,
                 continue
         break
 
-    command = ['ffmpeg',
+    command = ['/usr/bin/ffmpeg',
                '-ss', str(start_time),
                '-t', str(end_time - start_time),
                '-i', '"%s"' % direct_download_url,

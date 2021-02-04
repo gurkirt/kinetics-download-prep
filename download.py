@@ -5,7 +5,7 @@ import os
 import shutil
 import subprocess
 import uuid
-import ffmpeg
+# import ffmpeg
 import os
 from collections import OrderedDict
 from pathlib import Path
@@ -22,11 +22,14 @@ def construct_video_filename(row, dirname, trim_format='%06d'):
     """
     
     # print('HHHHHEEEERRRRREEEE', row, dirname)
-    basename = '%s_%s_%s.mp4' % (row['video-id'],
+    if row['end-time']>0:
+        basename = '%s_%s_%s.mp4' % (row['video-id'],
                                  trim_format % row['start-time'],
                                  trim_format % row['end-time'])
+    else:
+        basename = '%s_%s.mp4' % (row['video-id'], trim_format % row['start-time'])
+    
     output_filename = os.path.join(dirname, basename)
-
     return output_filename
 
 
@@ -87,16 +90,27 @@ def download_clip(video_identifier, output_filename,
             else:
                 continue
         break
-
-    command = ['ffmpeg',
-               '-ss', str(start_time),
-               '-t', str(end_time - start_time),
-               '-i', '"%s"' % direct_download_url,
-               '-c:v', 'libx264', '-preset', 'ultrafast',
-               '-c:a', 'aac',
-               '-threads', '1',
-               '-loglevel', 'panic',
-               '"%s"' % output_filename]
+    print(direct_download_url, '\n', output_filename, start_time, end_time)
+    if end_time>0:
+        command = ['ffmpeg',
+                '-ss', str(start_time),
+                '-t', str(end_time - start_time),
+                '-i', '"%s"' % direct_download_url,
+                '-c:v', 'libx264', '-preset', 'ultrafast',
+                '-c:a', 'aac',
+                '-threads', '1',
+                '-loglevel', 'panic',
+                '"%s"' % output_filename]
+    else:
+        command = ['ffmpeg',
+                    '-ss', str(max(0,start_time-3)),
+                    '-t', str(6),
+                    '-i', '"%s"' % direct_download_url,
+                    '-c:v', 'libx264', '-preset', 'ultrafast',
+                    '-c:a', 'aac',
+                    '-threads', '1',
+                    # '-loglevel', 'panic',
+                    '"%s"' % output_filename]
 
     command = ' '.join(command)
 
@@ -114,9 +128,9 @@ def download_clip(video_identifier, output_filename,
 def download_clip_wrapper(row, output_filename):
     """Wrapper for parallel processing purposes. label_to_dir"""
     
-
-    downloaded, log = download_clip(row['video-id'], output_filename,
-                                    row['start-time'], row['end-time'])
+    # print(row, type(row))
+    # print(output_filename)
+    downloaded, log = download_clip(row['video-id'], output_filename, row['start-time'], row['end-time'])
     status = tuple([str(downloaded), output_filename, log])
 
     return status
@@ -172,6 +186,7 @@ def get_output_filename(row, dirname, trim_format):
     # old_filename = construct_video_filename(row, old_dir, trim_format)
     # clip_id = os.path.basename(output_filename).split('.mp4')[0]
     if os.path.exists(output_filename):
+        # print(get_output_filename, 'exists ')
         fsize = Path(output_filename).stat().st_size
         # print('exists', output_filename, 'with file size of ',fsize, ' bytes')
         if fsize>1:
@@ -187,7 +202,9 @@ def make_video_names(dataset, output_dir, trim_format):
     count_done = 0
     total = len(dataset)
     print('Total is ', total)
-    for _, row in dataset.iterrows():
+    for ii, row in dataset.iterrows():
+        if ii>1:
+            continue
         output_filename, done = get_output_filename(row, output_dir, trim_format)
         if not done and output_filename not in video_name_list:
             video_name_list[output_filename] = 1
@@ -207,7 +224,7 @@ def main(input_csv, output_dir,
          trim_format='%06d', num_jobs=24,
          drop_duplicates=False):
 
-    print(input_csv)
+    print(input_csv, output_dir)
     # Reading and parsing Kinetics.
     dataset = parse_kinetics_annotations(input_csv)
     video_names = make_video_names(dataset, output_dir, trim_format)
@@ -216,7 +233,7 @@ def main(input_csv, output_dir,
 
     if num_jobs <= 1:
         status_lst = []
-        for row in enumerate(video_names):
+        for _, row in enumerate(video_names):
             status_lst.append(download_clip_wrapper(row[0], row[1]))
     else:
         status_lst = Parallel(n_jobs=num_jobs)(delayed(download_clip_wrapper)(row[0], row[1]) for row in video_names)
@@ -231,7 +248,7 @@ if __name__ == '__main__':
     p = argparse.ArgumentParser(description=description)
     p.add_argument('output_dir', type=str,
                    help='Output directory where videos will be saved.')
-    p.add_argument('--input_csv', type=str, default='data/',
+    p.add_argument('--input_csv', type=str, default='kinetics_csv/',
                    help=('CSV file containing the following format: '
                          'YouTube Identifier,Start time,End time,Class label'))
     p.add_argument('-f', '--trim-format', type=str, default='%06d',

@@ -33,7 +33,7 @@ def convert(videoname, video_dir, output_dir, fps):
     return status
 
 
-def main(video_dir, output_dir, num_jobs=16, fps=25):
+def main(video_dir, output_dir, num_jobs=16, fps=30):
     print('MAIN')
 
     videos = os.listdir(video_dir)
@@ -42,10 +42,10 @@ def main(video_dir, output_dir, num_jobs=16, fps=25):
     if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
     videos = sorted(videos)
-    for i, videoname in enumerate(videos[:100]):
-        convert(videoname, video_dir, output_dir, fps)
+    # for i, videoname in enumerate(videos):
+        # convert(videoname, video_dir, output_dir, fps)
         # extract(videoname, video_dir, output_dir, fps)
-    # status_lst = Parallel(n_jobs=num_jobs)(delayed(convert)(videoname, video_dir, output_dir, fps) for i, videoname in enumerate(videos))
+    status_lst = Parallel(n_jobs=num_jobs)(delayed(convert)(videoname, video_dir, output_dir, fps) for i, videoname in enumerate(videos))
 
 
 if __name__ == '__main__':
@@ -56,7 +56,7 @@ if __name__ == '__main__':
     p.add_argument('output_dir', type=str,
                    help='Output directory where hf5 db for videos will be saved.')
     p.add_argument('-n', '--num-jobs', type=int, default=20)
-    p.add_argument('--fps', type=int, default=25,
+    p.add_argument('--fps', type=int, default=30,
                    help='Frame rate at which videos to be extracted')
 
     main(**vars(p.parse_args()))

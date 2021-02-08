@@ -203,8 +203,8 @@ def make_video_names(dataset, output_dir, trim_format):
     total = len(dataset)
     print('Total is ', total)
     for ii, row in dataset.iterrows():
-        if ii>1:
-            continue
+        # if ii>1:
+        #     continue
         output_filename, done = get_output_filename(row, output_dir, trim_format)
         if not done and output_filename not in video_name_list:
             video_name_list[output_filename] = 1

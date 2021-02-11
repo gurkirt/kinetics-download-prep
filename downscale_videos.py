@@ -16,11 +16,11 @@ def convert(videoname, video_dir, output_dir, fps):
     if os.path.exists(downsampled_video_file):
         return 'EXISTS'
 
-    command = 'ffmpeg -loglevel panic -i {} -c:v libx264 -preset ultrafast -filter:v scale="trunc(oh*a/2)*2:256" -q:v 1 -r {} -c:a copy {}'.format(
+    command = '/usr/bin/ffmpeg -loglevel panic -i {} -c:v libx264 -preset ultrafast -filter:v scale="trunc(oh*a/2)*2:256" -q:v 1 -r {} -c:a copy {}'.format(
         video_file, fps, downsampled_video_file)
 
-    # print(command)
-    # os.system(command)
+    print(command)
+    os.system(command)
 
     try:
         output = subprocess.check_output(
@@ -55,7 +55,7 @@ if __name__ == '__main__':
                    help='Video directory where videos are saved.')
     p.add_argument('output_dir', type=str,
                    help='Output directory where hf5 db for videos will be saved.')
-    p.add_argument('-n', '--num-jobs', type=int, default=20)
+    p.add_argument('-n', '--num-jobs', type=int, default=16)
     p.add_argument('--fps', type=int, default=30,
                    help='Frame rate at which videos to be extracted')
 

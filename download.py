@@ -62,7 +62,7 @@ def download_clip(video_identifier, output_filename,
 
 
     # check if file already exists and skip clip
-    if os.path.exists(output_filename):
+    if check_if_video_exist(output_filename):
         print("Already Downloaded!")
         return status, 'Downloaded'
 
@@ -90,7 +90,7 @@ def download_clip(video_identifier, output_filename,
             else:
                 continue
         break
-    print(direct_download_url, '\n', output_filename, start_time, end_time)
+    
     if end_time>0:
         command = ['ffmpeg',
                 '-ss', str(start_time),
@@ -102,7 +102,8 @@ def download_clip(video_identifier, output_filename,
                 '-loglevel', 'panic',
                 '"%s"' % output_filename]
     else:
-        command = ['ffmpeg',
+        # print( output_filename, start_time, end_time)
+        command = ['/usr/bin/ffmpeg',
                     '-ss', str(max(0,start_time-3)),
                     '-t', str(6),
                     '-i', '"%s"' % direct_download_url,
@@ -111,6 +112,7 @@ def download_clip(video_identifier, output_filename,
                     '-threads', '1',
                     # '-loglevel', 'panic',
                     '"%s"' % output_filename]
+        # print(command)
 
     command = ' '.join(command)
 
@@ -181,20 +183,27 @@ def parse_kinetics_annotations(input_csv, ignore_is_cc=False):
 
     return df
 
-def get_output_filename(row, dirname, trim_format):
-    output_filename = construct_video_filename(row, dirname, trim_format)
-    # old_filename = construct_video_filename(row, old_dir, trim_format)
-    # clip_id = os.path.basename(output_filename).split('.mp4')[0]
+
+def check_if_video_exist(output_filename):
+
     if os.path.exists(output_filename):
         # print(get_output_filename, 'exists ')
         fsize = Path(output_filename).stat().st_size
         # print('exists', output_filename, 'with file size of ',fsize, ' bytes')
         if fsize>1:
-            return output_filename, True
+            return  True
         else:
             print('CHECK file size of ',fsize, ' bytes', output_filename)
+    return False
+
+
+def get_output_filename(row, dirname, trim_format):
+    output_filename = construct_video_filename(row, dirname, trim_format)
+    # old_filename = construct_video_filename(row, old_dir, trim_format)
+    # clip_id = os.path.basename(output_filename).split('.mp4')[0]
+
         
-    return output_filename, False
+    return output_filename, check_if_video_exist(output_filename)
 
 def make_video_names(dataset, output_dir, trim_format):
     video_name_list = {}
@@ -203,7 +212,7 @@ def make_video_names(dataset, output_dir, trim_format):
     total = len(dataset)
     print('Total is ', total)
     for ii, row in dataset.iterrows():
-        # if ii>1:
+        # if ii>10:
         #     continue
         output_filename, done = get_output_filename(row, output_dir, trim_format)
         if not done and output_filename not in video_name_list:

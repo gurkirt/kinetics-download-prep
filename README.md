@@ -32,6 +32,10 @@ conda install -c menpo ffmpeg
 pip install --upgrade youtube-dl
 ```
 
+#### WARNING REGARDING FFMPEG
+
+python based ffmpeg might not work. You can install system ffmpeg, which is usall install at `/usr/bin/ffmpeg`
+
 ### Re-orgnise existing videos
 Use `reorg_kinetics_videos.py` to reorgnise existing videos from `videos_dir`. 
 
@@ -73,10 +77,13 @@ python frame_extract.py <videos_dir> <output_dir> --fps=30
 Extract frames at particular frame rate by `--fps=int_number (default 30)` or video fps via setting `--fps=0`. You can specify number of jobs to run in parllel by `--n=number`. 
 
 ### Downscale videos
+
+`NOT WORKING at the momement, some problem with FFMPEG`
+
 Smallest side to 256. Skeleton is already there in `downscale_videos.py`.
 
 ```
-python download.py <input_dir> <output_dir> --fps=30
+python downscale_videos.py <input_dir> <output_dir> --fps=30
 ```
 
 Also, You can specify number of jobs to run in parllel by `--n=number`. 

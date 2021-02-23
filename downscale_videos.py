@@ -44,7 +44,6 @@ def main(video_dir, output_dir, num_jobs=16, fps=30):
     videos = sorted(videos)
     # for i, videoname in enumerate(videos):
         # convert(videoname, video_dir, output_dir, fps)
-        # extract(videoname, video_dir, output_dir, fps)
     status_lst = Parallel(n_jobs=num_jobs)(delayed(convert)(videoname, video_dir, output_dir, fps) for i, videoname in enumerate(videos))
 
 

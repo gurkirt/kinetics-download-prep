@@ -4,15 +4,14 @@ import json
 import os
 import shutil
 import subprocess
-import uuid
-# import ffmpeg
+# import uuid
 import os
 from collections import OrderedDict
 from pathlib import Path
 from joblib import delayed
 from joblib import Parallel
 import pandas as pd
-
+import random
 old_dir = '../videos_old/'
 
 
@@ -36,6 +35,7 @@ def construct_video_filename(row, dirname, trim_format='%06d'):
 def download_clip(video_identifier, output_filename,
                   start_time, end_time,
                   num_attempts=3,
+                  tmp_dir='/tmp/kinetics/'
                   url_base='https://www.youtube.com/watch?v='):
     
     """Download a video from youtube if exists and is not blocked.
@@ -68,21 +68,21 @@ def download_clip(video_identifier, output_filename,
 
     # Construct command line for getting the direct video link.
     # download_clip
+    
 
+    tmp_filename = os.path.join(tmp_dir, '%s.%%(ext)s' % uuid.uuid4())
     command = ['youtube-dl',
                '--quiet', '--no-warnings',
-               '-f', '18',
-               '--get-url',
+               '-f', 'mp4',
+               '-o', '"%s"' % tmp_filename,
                '"%s"' % (url_base + video_identifier)]
     command = ' '.join(command)
     direct_download_url = None
-    # print(command)
     attempts = 0
     while True:
         try:
-            direct_download_url = subprocess.check_output(command, shell=True,
-                                                          stderr=subprocess.STDOUT)
-            direct_download_url = direct_download_url.strip().decode('utf-8')
+            output = subprocess.check_output(command, shell=True,
+                                             stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as err:
             attempts += 1
             if attempts == num_attempts:
@@ -91,13 +91,15 @@ def download_clip(video_identifier, output_filename,
                 continue
         break
     
+    tmp_filename = glob.glob('%s*' % tmp_filename.split('.')[0])[0]
+
     if end_time>0:
         command = ['ffmpeg',
                 '-ss', str(start_time),
                 '-t', str(end_time - start_time),
-                '-i', '"%s"' % direct_download_url,
-                '-c:v', 'libx264', '-preset', 'ultrafast',
-                '-c:a', 'aac',
+                '-i', '"%s"' % tmp_filename,
+                '-c:v', 'libx264', 
+                '-c:a', 'copy',
                 '-threads', '1',
                 '-loglevel', 'panic',
                 '"%s"' % output_filename]
@@ -106,13 +108,12 @@ def download_clip(video_identifier, output_filename,
         command = ['ffmpeg',
                     '-ss', str(max(0, start_time-3)),
                     '-t', str(6),
-                    '-i', '"%s"' % direct_download_url,
-                    '-c:v', 'libx264', '-preset', 'ultrafast',
-                    '-c:a', 'aac',
+                    '-i', '"%s"' % tmp_filename,
+                    '-c:v', 'libx264', 
+                    '-c:a', 'copy',
                     '-threads', '1',
                     '-loglevel', 'panic',
                     '"%s"' % output_filename]
-        # print(command)
 
     command = ' '.join(command)
 
@@ -123,7 +124,7 @@ def download_clip(video_identifier, output_filename,
         return status, err.output
 
     status = os.path.exists(output_filename)
-    
+    os.remove(tmp_filename)
     return status, 'Downloaded'
 
 
@@ -234,6 +235,8 @@ def main(input_csv, output_dir,
          drop_duplicates=False):
 
     print(input_csv, output_dir)
+    if os.path.isdir(output_dir):
+        os.makedirs(output_dir)
     # Reading and parsing Kinetics.
     dataset = parse_kinetics_annotations(input_csv)
     video_names = make_video_names(dataset, output_dir, trim_format)

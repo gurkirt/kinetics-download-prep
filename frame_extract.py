@@ -22,7 +22,7 @@ def extract(videoname, video_dir, output_dir, fps):
         if fps > 0:
             command = 'ffmpeg -loglevel panic -i {} -q:v 1 -r {} {}/%06d.jpg'.format(video_file, fps, frames_dir)
         else:
-            command = '/usr/bin/ffmpeg -loglevel panic -i {} -q:v 1 {}/%06d.jpg'.format(video_file, frames_dir)
+            command = 'ffmpeg -loglevel panic -i {} -q:v 1 {}/%06d.jpg'.format(video_file, frames_dir)
 
         try:
             output = subprocess.check_output(

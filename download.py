@@ -103,14 +103,14 @@ def download_clip(video_identifier, output_filename,
                 '"%s"' % output_filename]
     else:
         # print( output_filename, start_time, end_time)
-        command = ['/usr/bin/ffmpeg',
-                    '-ss', str(max(0,start_time-3)),
+        command = ['ffmpeg',
+                    '-ss', str(max(0, start_time-3)),
                     '-t', str(6),
                     '-i', '"%s"' % direct_download_url,
                     '-c:v', 'libx264', '-preset', 'ultrafast',
                     '-c:a', 'aac',
                     '-threads', '1',
-                    # '-loglevel', 'panic',
+                    '-loglevel', 'panic',
                     '"%s"' % output_filename]
         # print(command)
 

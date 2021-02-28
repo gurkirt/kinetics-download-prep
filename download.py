@@ -35,7 +35,7 @@ def construct_video_filename(row, dirname, trim_format='%06d'):
 def download_clip(video_identifier, output_filename,
                   start_time, end_time,
                   num_attempts=3,
-                  tmp_dir='/tmp/kinetics/'
+                  tmp_dir='/tmp/kinetics/',
                   url_base='https://www.youtube.com/watch?v='):
     
     """Download a video from youtube if exists and is not blocked.
@@ -235,7 +235,7 @@ def main(input_csv, output_dir,
          drop_duplicates=False):
 
     print(input_csv, output_dir)
-    if os.path.isdir(output_dir):
+    if not os.path.isdir(output_dir):
         os.makedirs(output_dir)
     # Reading and parsing Kinetics.
     dataset = parse_kinetics_annotations(input_csv)

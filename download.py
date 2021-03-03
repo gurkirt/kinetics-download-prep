@@ -62,6 +62,7 @@ def download_clip(video_identifier, output_filename,
 
     if not os.path.isdir(tmp_dir):
         os.makedirs(tmp_dir)
+
     # check if file already exists and skip clip
     if check_if_video_exist(output_filename):
         print("Already Downloaded!")
@@ -71,12 +72,12 @@ def download_clip(video_identifier, output_filename,
     # download_clip
     #print('We are downloading to', output_filename) 
 
-    # tmp_filename = os.path.join(tmp_dir, '%s.%%(ext)s' % uuid.uuid4())
+    tmp_filename = os.path.join(tmp_dir, '%s.%%(ext)s' % uuid.uuid4())
     command = ['youtube-dl',
                #'--quiet', '--no-warnings',
-               '-f', 'mp4',
-            #    '-o', '"%s"' % tmp_filename,
-               '--get-url',
+               '-f', '18',
+               '-o', '"%s"' % tmp_filename,
+            #    '--get-url',
                '"%s"' % (url_base + video_identifier)]
     command1 = ' '.join(command)
     
@@ -96,7 +97,7 @@ def download_clip(video_identifier, output_filename,
                 continue
         break
     
-    # tmp_filename = glob.glob('%s*' % tmp_filename.split('.')[0])[0]
+    tmp_filename = glob.glob('%s*' % tmp_filename.split('.')[0])[0]
     #print('downloaded 2', tmp_filename)
     if end_time>0:
         command = ['ffmpeg',
@@ -114,9 +115,9 @@ def download_clip(video_identifier, output_filename,
         command = ['ffmpeg -y',
                     '-ss', str(max(0, start_time-3)),
                     '-t', str(6),
-                    # '-i', '"%s"' % tmp_filename,
-                    '-i', '"%s"' % direct_download_url,
-                    # '-c:v', 'libx264', 
+                    '-i', '"%s"' % tmp_filename,
+                    # '-i', '"%s"' % direct_download_url,
+                    '-c:v', 'libx264', 
                     '-c:a', 'copy',
                     '-threads', '1',
                     '-max_muxing_queue_size', '9999',

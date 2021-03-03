@@ -4,7 +4,7 @@ import json
 import os
 import shutil
 import subprocess
-# import uuid
+import uuid
 import os
 from collections import OrderedDict
 from pathlib import Path
@@ -68,20 +68,22 @@ def download_clip(video_identifier, output_filename,
 
     # Construct command line for getting the direct video link.
     # download_clip
-    
+    #print('We are downloading to', output_filename) 
 
     tmp_filename = os.path.join(tmp_dir, '%s.%%(ext)s' % uuid.uuid4())
     command = ['youtube-dl',
-               '--quiet', '--no-warnings',
+               #'--quiet', '--no-warnings',
                '-f', 'mp4',
                '-o', '"%s"' % tmp_filename,
                '"%s"' % (url_base + video_identifier)]
-    command = ' '.join(command)
-    direct_download_url = None
+    command1 = ' '.join(command)
+    
     attempts = 0
+    #print('attempting to download', command1)
     while True:
         try:
-            output = subprocess.check_output(command, shell=True,
+            #os.system(command1)
+            output = subprocess.check_output(command1, shell=True,
                                              stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as err:
             attempts += 1
@@ -92,31 +94,32 @@ def download_clip(video_identifier, output_filename,
         break
     
     tmp_filename = glob.glob('%s*' % tmp_filename.split('.')[0])[0]
-
+    #print('downloaded 2', tmp_filename)
     if end_time>0:
         command = ['ffmpeg',
                 '-ss', str(start_time),
                 '-t', str(end_time - start_time),
                 '-i', '"%s"' % tmp_filename,
-                '-c:v', 'libx264', 
+                #'-c:v', 'libx264', 
                 '-c:a', 'copy',
                 '-threads', '1',
                 '-loglevel', 'panic',
                 '"%s"' % output_filename]
     else:
         # print( output_filename, start_time, end_time)
-        command = ['ffmpeg',
+        command = ['ffmpeg -y',
                     '-ss', str(max(0, start_time-3)),
                     '-t', str(6),
                     '-i', '"%s"' % tmp_filename,
                     '-c:v', 'libx264', 
                     '-c:a', 'copy',
                     '-threads', '1',
+                    '-max_muxing_queue_size', '9999',
                     '-loglevel', 'panic',
                     '"%s"' % output_filename]
 
     command = ' '.join(command)
-
+    print(command1, command)
     try:
         output = subprocess.check_output(command, shell=True,
                                          stderr=subprocess.STDOUT)
@@ -131,8 +134,8 @@ def download_clip(video_identifier, output_filename,
 def download_clip_wrapper(row, output_filename):
     """Wrapper for parallel processing purposes. label_to_dir"""
     
-    # print(row, type(row))
-    # print(output_filename)
+    #print(row, type(row))
+    #print(output_filename)
     downloaded, log = download_clip(row['video-id'], output_filename, row['start-time'], row['end-time'])
     status = tuple([str(downloaded), output_filename, log])
 
@@ -191,9 +194,10 @@ def check_if_video_exist(output_filename):
         # print(get_output_filename, 'exists ')
         fsize = Path(output_filename).stat().st_size
         # print('exists', output_filename, 'with file size of ',fsize, ' bytes')
-        if fsize>1:
+        if fsize>10:
             return  True
         else:
+            os.remove(output_filename)
             print('CHECK file size of ',fsize, ' bytes', output_filename)
     return False
 
@@ -213,8 +217,9 @@ def make_video_names(dataset, output_dir, trim_format):
     total = len(dataset)
     print('Total is ', total)
     for ii, row in dataset.iterrows():
-        # if ii>10:
-        #     continue
+        if ii>1099999999999999:
+            break
+            
         output_filename, done = get_output_filename(row, output_dir, trim_format)
         if not done and output_filename not in video_name_list:
             video_name_list[output_filename] = 1

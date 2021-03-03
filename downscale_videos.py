@@ -16,7 +16,7 @@ def convert(videoname, video_dir, output_dir):
     if os.path.exists(downsampled_video_file):
         return 'EXISTS'
 
-    command = 'ffmpeg -loglevel panic -i {} -c:v libx264 -preset ultrafast -filter:v scale="trunc(oh*a/2)*2:256" -c:a copy {}'.format(
+    command = 'ffmpeg -y -loglevel panic -i {} -preset ultrafast -filter:v scale="trunc(oh*a/2)*2:256" -threads 1 -max_muxing_queue_size 9999 -c:a copy {}'.format(
         video_file, downsampled_video_file)
 
     print(command)
@@ -54,7 +54,7 @@ if __name__ == '__main__':
                    help='Video directory where videos are saved.')
     p.add_argument('output_dir', type=str,
                    help='Output directory where hf5 db for videos will be saved.')
-    p.add_argument('-n', '--num-jobs', type=int, default=8)
+    p.add_argument('-n', '--num-jobs', type=int, default=16)
 
     main(**vars(p.parse_args()))
 

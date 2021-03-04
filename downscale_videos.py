@@ -44,7 +44,7 @@ def main(video_dir, output_dir, num_jobs=16):
     videos = sorted(videos)
     # for i, videoname in enumerate(videos):
         # convert(videoname, video_dir, output_dir, fps)
-    status_lst = Parallel(n_jobs=num_jobs)(delayed(convert)(videoname, video_dir, output_dir, fps) for i, videoname in enumerate(videos))
+    status_lst = Parallel(n_jobs=num_jobs)(delayed(convert)(videoname, video_dir, output_dir) for i, videoname in enumerate(videos))
 
 
 if __name__ == '__main__':
@@ -54,7 +54,6 @@ if __name__ == '__main__':
                    help='Video directory where videos are saved.')
     p.add_argument('output_dir', type=str,
                    help='Output directory where hf5 db for videos will be saved.')
-    p.add_argument('-n', '--num-jobs', type=int, default=16)
 
     main(**vars(p.parse_args()))
 

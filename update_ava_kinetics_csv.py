@@ -1,6 +1,6 @@
 
 import os, math
-
+import shutil
 def make_box_anno(llist):
     box = [llist[2], llist[3], llist[4], llist[5]]
     return [float(b) for b in box]
@@ -53,13 +53,16 @@ def main():
                 video_frames_dir = os.path.join(frames_dir, video_name)
                 imglist = []
                 if os.path.isdir(os.path.join(frames_dir, video_name)):
-                    found_count += 1
                     imglist = os.listdir(video_frames_dir)
                     imglist = [img for img in imglist if img.endswith('.jpg')]
-                    # if len(imglist)>10:
-                    if found_count%1000 == 0:
-                        print(ii, video, len(imglist))
-                    num_frames += len(imglist)
+                    if len(imglist)>80:
+                        found_count += 1
+                        if found_count%1000 == 0:
+                            print(ii, video, len(imglist))
+                        num_frames += len(imglist)
+                    else:
+                        shutil.rmtree(video_frames_dir)
+                        
                 #     found_count += 1
                 #     integer_time_stamp = int(math.floor(anno[0]))
                 #     if integer_time_stamp<= 3:
@@ -73,6 +76,7 @@ def main():
                 #         wrtie_str += ',{:d}'.format(anno[2])
                 #     wrtie_str += '\n'
                 #     new_csv.write(wrtie_str)
+                
         new_csv.close()
         print('{:s} found {:d}/{:d} average number of frames {:d}'.format(anno_name, found_count, total_count, int(num_frames/found_count)))
 

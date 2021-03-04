@@ -44,7 +44,7 @@ def update_csvs(frames_dir, anno_files, anno_dir):
         annotations = read_kinetics_annotations(anno_file)
         new_csv = open(os.path.join(new_anno_dir, anno_name), 'w')
         total_count = 1
-        found_count = 1
+        found_count = 0
         num_frames = 1
         for ii, video in enumerate(annotations):
             for anno in  annotations[video]:
@@ -56,12 +56,12 @@ def update_csvs(frames_dir, anno_files, anno_dir):
                 if os.path.isdir(os.path.join(frames_dir, video_name)):
                     imglist = os.listdir(video_frames_dir)
                     imglist = [img for img in imglist if img.endswith('.jpg')]
-                    num_frames = len(imglist)
-                    if len(imglist)>80:
+                    num_f= len(imglist)
+                    if len(imglist)>120:
                         found_count += 1
                         if found_count%1000 == 0:
                             print(ii, video, len(imglist))
-                        num_frames += len(imglist)
+                        num_frames += num_f
                     
                         integer_time_stamp = int(math.floor(anno[0]))
                         if integer_time_stamp<= 3:
@@ -72,13 +72,14 @@ def update_csvs(frames_dir, anno_files, anno_dir):
                         if anno[1] is not None:
                             for b in anno[1]:
                                 wrtie_str += ',{:f}'.format(b)
-                            wrtie_str += ',{:d},{:d}'.format(anno[2],num_frames)
+                            wrtie_str += ',{:d},{:d}'.format(anno[2],num_f)
                         wrtie_str += '\n'
                         new_csv.write(wrtie_str)
                     else:
                         shutil.rmtree(video_frames_dir)
 
         new_csv.close()
+        
         print('{:s} found {:d}/{:d} average number of frames {:d}'.format(anno_name, found_count, total_count, int(num_frames/found_count)))
 
 
@@ -114,7 +115,7 @@ if __name__ == '__main__':
     anno_files = ['kinetics_train_v1.0.csv', 'kinetics_val_v1.0.csv', 'kinetics_test_v1.0.csv']
     anno_dir = 'ava_kinetics_csv/'
     update_csvs(args.frames_dir, anno_files, anno_dir)
-    move_dirs(args.frames_dri, anno_files, anno_dir)
+    #move_dirs(args.frames_dri, anno_files, anno_dir)
 
          
 

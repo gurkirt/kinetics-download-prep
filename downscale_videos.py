@@ -16,11 +16,11 @@ def convert(videoname, video_dir, output_dir):
     if os.path.exists(downsampled_video_file):
         return 'EXISTS'
 
-    command = 'ffmpeg -y -loglevel panic -i {} -preset ultrafast -filter:v scale="trunc(oh*a/2)*2:256" -threads 1 -max_muxing_queue_size 9999 -c:a copy {}'.format(
+    command = 'ffmpeg -y -loglevel panic -i {} -c:v libx264 -filter:v scale="trunc(oh*a/2)*2:256" -threads 1 -c:a copy {}'.format(
         video_file, downsampled_video_file)
 
-    print(command)
-    os.system(command)
+    #print(command)
+    #os.system(command)
 
     try:
         output = subprocess.check_output(

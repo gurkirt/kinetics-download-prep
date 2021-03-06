@@ -59,7 +59,7 @@ def update_csvs(frames_dir, anno_files, anno_dir):
                     num_f= len(imglist)
                     if len(imglist)>120:
                         found_count += 1
-                        if found_count%1000 == 0:
+                        if found_count%10000 == 0:
                             print(ii, video, len(imglist))
                         num_frames += num_f
                     

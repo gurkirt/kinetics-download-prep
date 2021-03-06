@@ -20,9 +20,9 @@ def extract(videoname, video_dir, output_dir, fps):
 
     if len(imglist) < 180:  # very few or no frames try extracting againg
         if fps > 0:
-            command = 'ffmpeg -y -i {} -q:v 1 -threads 1 -loglevel panic -max_muxing_queuw_size 2048  -r {} {}/%06d.jpg'.format(video_file, fps, frames_dir)
+            command = 'ffmpeg -y -i {} -q:v 1 -threads 1 -loglevel panic -r {} {}/%06d.jpg'.format(video_file, fps, frames_dir)
         else:
-            command = 'ffmpeg -y -threads 1 -max_muxing_queue_size 9999 -i {} -q:v 1 {}/%06d.jpg'.format(video_file, frames_dir)
+            command = 'ffmpeg -y -threads 1 -i {} -q:v 1 {}/%06d.jpg'.format(video_file, frames_dir)
 
         #os.system(command)
         try:

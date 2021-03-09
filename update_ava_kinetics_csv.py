@@ -87,20 +87,23 @@ def move_dirs(frames_dir, anno_files, anno_dir):
 
     trim_format='%06d'
     frames_dir = args.frames_dir
-    to_move_dir = os.path.join(os.path.join(frames_dir.split('/')[:-1]), 'test-frames/')
+    to_move_dir = os.path.join('/'.join(frames_dir.split('/')[:-2]), 'test-frames/')
+    print('TO MOVE DIR', to_move_dir)
     if not os.path.isdir(to_move_dir):
         os.makedirs(to_move_dir)
     anno_name = anno_files[-1]
     anno_file = os.path.join(anno_dir, anno_name)
     annotations = read_kinetics_annotations(anno_file)
     total_count = 0
-
     for ii, video in enumerate(annotations):
         total_count += 1
+        time_stamp = annotations[video][0][0]
         video_name = '{:s}_{:s}'.format(video, trim_format % int(math.floor(time_stamp)))
         src_frames_dir = os.path.join(frames_dir, video_name)
         # dst_frames_dir = os.path.join(frames_dir, video_name)
-        shutil.move(src_frames_dir, to_move_dir)
+        print(src_frames_dir, to_move_dir)
+        if os.path.isdir(src_frames_dir):
+            shutil.move(src_frames_dir, to_move_dir)
 
     print('Moved ', total_count, ' dirs')
 
@@ -115,7 +118,7 @@ if __name__ == '__main__':
     anno_files = ['kinetics_train_v1.0.csv', 'kinetics_val_v1.0.csv', 'kinetics_test_v1.0.csv']
     anno_dir = 'ava_kinetics_csv/'
     update_csvs(args.frames_dir, anno_files, anno_dir)
-    #move_dirs(args.frames_dri, anno_files, anno_dir)
+    #move_dirs(args.frames_dir, anno_files, anno_dir)
 
          
 

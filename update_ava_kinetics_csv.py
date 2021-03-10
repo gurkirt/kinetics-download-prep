@@ -68,7 +68,7 @@ def update_csvs(frames_dir, anno_files, anno_dir):
                             new_time_stamp = time_stamp
                         else:
                             new_time_stamp = 3.0 + time_stamp - integer_time_stamp
-                        wrtie_str = '{:s},{:f},'.format(video_name, new_time_stamp, )
+                        wrtie_str = '{:s},{:f}'.format(video_name, new_time_stamp, )
                         if anno[1] is not None:
                             for b in anno[1]:
                                 wrtie_str += ',{:f}'.format(b)

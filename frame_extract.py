@@ -3,12 +3,14 @@ import os
 import pdb
 import numpy as np
 import subprocess
-
+import shutil
 from joblib import delayed
 from joblib import Parallel
+count = 0
 
 
 def extract(videoname, video_dir, output_dir, fps):
+    global count
     video_file = os.path.join(video_dir, videoname)
     frames_dir = os.path.join(output_dir, videoname[:-4])
 
@@ -18,18 +20,37 @@ def extract(videoname, video_dir, output_dir, fps):
     imglist = os.listdir(frames_dir)
     imglist = [img for img in imglist if img.endswith('.jpg')]
 
-    if len(imglist) < 180:  # very few or no frames try extracting againg
+
+    if len(imglist) < 179:  # very few or no frames try extracting againg
+        count += 1
+        temp_dir = '/tmp/{}'.format(videoname[:-4])
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
         if fps > 0:
-            command = 'ffmpeg -y -i {} -q:v 1 -threads 1 -loglevel panic -r {} {}/%06d.jpg'.format(video_file, fps, frames_dir)
+            command = 'ffmpeg -y -i {} -q:v 1 -threads 1 -filter:v "scale=if(lte(iw\,ih)\,min(256\,iw)\,-2):if(gt(iw\,ih)\,min(256\,ih)\,-2)" -r {} {}/%06d.jpg'.format(video_file, fps, temp_dir)
         else:
             command = 'ffmpeg -y -threads 1 -i {} -q:v 1 {}/%06d.jpg'.format(video_file, frames_dir)
 
-        #os.system(command)
+        # os.system(command)
         try:
             output = subprocess.check_output(
                 command, shell=True, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as err:
             return err.output
+
+        imglist1 = os.listdir(temp_dir)
+        imglist1 = [img for img in imglist1 if img.endswith('.jpg')]
+        print(command)
+        print(frames_dir, temp_dir, len(imglist1), len(imglist))
+        if len(imglist1)+2>len(imglist):
+            shutil.rmtree(frames_dir)
+            shutil.move(temp_dir, output_dir)
+            # pdb.set_trace()
+        else:
+            # pdb.set_trace()
+            shutil.rmtree(temp_dir)
+            
+        
 
     imglist = os.listdir(frames_dir)
     imglist = [img for img in imglist if img.endswith('.jpg')]
@@ -47,11 +68,11 @@ def main(video_dir, output_dir, num_jobs=16, fps=30):
         os.makedirs(output_dir)
     videos = sorted(videos)
     print('Frames to be extracted for ',len(videos), ' videos')
-    # for i, videoname in enumerate(reversed(videos)):
-    #     numf = extract(videoname, video_dir, output_dir, fps)
-        # extract(videoname, video_dir, output_dir, fps)
-    status_lst = Parallel(n_jobs=num_jobs)(delayed(extract)(videoname, video_dir, output_dir, fps) for i, videoname in enumerate(videos))
-
+    for i, videoname in enumerate(reversed(videos)):
+        numf = extract(videoname, video_dir, output_dir, fps)
+        extract(videoname, video_dir, output_dir, fps)
+    # status_lst = Parallel(n_jobs=num_jobs)(delayed(extract)(videoname, video_dir, output_dir, fps) for i, videoname in enumerate(videos))
+    print('to be done', count)
 
 if __name__ == '__main__':
     description = 'Helper script for downloading and trimming kinetics videos.'

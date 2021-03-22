@@ -10,7 +10,7 @@ def make_box_anno(llist):
 def read_kinetics_annotations(anno_file):
     lines = open(anno_file, 'r').readlines()
     annotations = {}
-    is_train = anno_file.find('train')>-1
+    is_test = anno_file.find('test')>-1
     
     for line in lines:
         line = line.rstrip('\n')
@@ -24,13 +24,14 @@ def read_kinetics_annotations(anno_file):
                 annotations[video_name] = [[time_stamp, box, label]]
             else:
                 annotations[video_name] += [[time_stamp, box, label]]
-        elif not is_train:
+        elif is_test:
             if video_name not in annotations:
                 annotations[line_list[0]] = [[time_stamp, None, None]]
             else:
                 annotations[line_list[0]] = [[time_stamp, None, None]]
 
     return annotations
+
 
 def update_csvs(frames_dir, anno_files, anno_dir):
     new_anno_dir = 'ava_kinetics_updated_csv/'
@@ -47,27 +48,33 @@ def update_csvs(frames_dir, anno_files, anno_dir):
         found_count = 0
         num_frames = 1
         for ii, video in enumerate(annotations):
+    
+            integer_time_stamp = int(math.floor(annotations[video][0][0]))
+            time_stamp = annotations[video][0][0] 
+            if integer_time_stamp<= 3:
+                new_time_stamp = time_stamp
+            else:
+                new_time_stamp = 3.0 + time_stamp - integer_time_stamp
             for anno in  annotations[video]:
                 total_count += 1
-                time_stamp = anno[0] 
+                
                 video_name = '{:s}_{:s}'.format(video, trim_format % int(math.floor(time_stamp)))
                 video_frames_dir = os.path.join(frames_dir, video_name)
                 imglist = []
                 if os.path.isdir(os.path.join(frames_dir, video_name)):
                     imglist = os.listdir(video_frames_dir)
                     imglist = [img for img in imglist if img.endswith('.jpg')]
+                    
                     num_f= len(imglist)
-                    if len(imglist)>120:
+
+                    
+                    min_frames = int(new_time_stamp*30+20)
+                    if len(imglist)>=min_frames:
                         found_count += 1
                         if found_count%10000 == 0:
                             print(ii, video, len(imglist))
                         num_frames += num_f
-                    
-                        integer_time_stamp = int(math.floor(anno[0]))
-                        if integer_time_stamp<= 3:
-                            new_time_stamp = time_stamp
-                        else:
-                            new_time_stamp = 3.0 + time_stamp - integer_time_stamp
+ 
                         wrtie_str = '{:s},{:f}'.format(video_name, new_time_stamp, )
                         if anno[1] is not None:
                             for b in anno[1]:
@@ -110,9 +117,9 @@ def move_dirs(frames_dir, anno_files, anno_dir):
     
 
 if __name__ == '__main__':
-    description = 'Helper script for updating cvs of ava-kinetics dataset  after video trimming.'
+    description = 'Helper script for updating cvs of kinetics dataset  after video trimming.'
     p = argparse.ArgumentParser(description=description)
-    p.add_argument('--frames_dir', type=str, default='/raid/susaha/datasets/ava-kinetics/frames_x256/',
+    p.add_argument('--frames_dir', type=str, default='/raid/susaha/datasets/ava-kinetics/kinetics/images/',
                    help='Video directory where videos are saved.')
     args = p.parse_args()
     anno_files = ['kinetics_train_v1.0.csv', 'kinetics_val_v1.0.csv', 'kinetics_test_v1.0.csv']

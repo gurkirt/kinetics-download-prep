@@ -5,10 +5,10 @@ You can use the same download code to download 6 seconds long clips around the t
 Code is modified from [ActivityNet Crawler](https://github.com/activitynet/ActivityNet.git).
 
 
-# UPDATE Download is avaivale from AWS by CVDF [HERE](https://github.com/cvdfoundation/kinetics-dataset)
-Use above repo to download youtube-dl route used here is will lead to lower number of videos downloaded. Above link give access to entire dataset including videos that are now deleted from youtube. 
+# UPDATE: Direct download is made availbale [HERE](https://github.com/cvdfoundation/kinetics-dataset) by CVDF 
+This repo use youtube-dl route to download videos for kinetics dataset. Which leads to lower number of videos downloaded as some of the videos are deleted from youtube. Above link give direct access to entire original dataset including videos that are now deleted from youtube. Please use that in future, also, it would take much less time and space.
 
-But, you can other utlities from here, e.g. resizing video, extracting frame, rewriting the annotations etc.
+But, you can other utilities from here, e.g. resizing video, extracting frame, rewriting the annotations etc.
 
 
 ## Download Kinetics dataset

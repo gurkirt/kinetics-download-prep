@@ -4,6 +4,13 @@ This repository contains code to download all subsets (700, 600, or 400) of [Kin
 You can use the same download code to download 6 seconds long clips around the timestamps provided in [Ava-Kinetics detection dataset](http://research.google.com/ava/).
 Code is modified from [ActivityNet Crawler](https://github.com/activitynet/ActivityNet.git).
 
+
+# UPDATE Download is avaivale from AWS by CVDF [HERE](https://github.com/cvdfoundation/kinetics-dataset)
+Use above repo to download youtube-dl route used here is will lead to lower number of videos downloaded. Above link give access to entire dataset including videos that are now deleted from youtube. 
+
+But, you can other utlities from here, e.g. resizing video, extracting frame, rewriting the annotations etc.
+
+
 ## Download Kinetics dataset
 ### What is different from ActivityNet Crawler
 Orignal [Crawler](https://github.com/activitynet/ActivityNet/tree/master/Crawler/Kinetics) store videos in respective label directories. However, there is an overlap among the subsets and labels (class names) are changed, e.g. `passing american football (not in-game)` renamed to `passing American football (not in-game)` from 600 to 700, or class is made more fine-grained, e.g. `picking fruit` into multiple subclasses.

@@ -1,11 +1,12 @@
 
+
 import os, math
 import shutil, argparse
+
 
 def make_box_anno(llist):
     box = [llist[2], llist[3], llist[4], llist[5]]
     return [float(b) for b in box]
-
 
 def read_kinetics_annotations(anno_file):
     lines = open(anno_file, 'r').readlines()
@@ -24,7 +25,8 @@ def read_kinetics_annotations(anno_file):
                 annotations[video_name] = [[time_stamp, box, label]]
             else:
                 annotations[video_name] += [[time_stamp, box, label]]
-        elif is_test:
+        # elif is_test:
+        else:
             if video_name not in annotations:
                 annotations[line_list[0]] = [[time_stamp, None, None]]
             else:
@@ -94,7 +96,7 @@ def move_dirs(frames_dir, anno_files, anno_dir):
 
     trim_format='%06d'
     frames_dir = args.frames_dir
-    to_move_dir = os.path.join('/'.join(frames_dir.split('/')[:-2]), 'test-frames/')
+    to_move_dir = os.path.join('/'.join(frames_dir.split('/')[:-2]), 'test-images/')
     print('TO MOVE DIR', to_move_dir)
     if not os.path.isdir(to_move_dir):
         os.makedirs(to_move_dir)
@@ -102,14 +104,15 @@ def move_dirs(frames_dir, anno_files, anno_dir):
     anno_file = os.path.join(anno_dir, anno_name)
     annotations = read_kinetics_annotations(anno_file)
     total_count = 0
-    for ii, video in enumerate(annotations):
+    for ii, video_name in enumerate(annotations):
         total_count += 1
-        time_stamp = annotations[video][0][0]
-        video_name = '{:s}_{:s}'.format(video, trim_format % int(math.floor(time_stamp)))
+        time_stamp = annotations[video_name][0][0]
+        # video_name = '{:s}_{:s}'.format(video, trim_format % int(math.floor(time_stamp)))
         src_frames_dir = os.path.join(frames_dir, video_name)
         # dst_frames_dir = os.path.join(frames_dir, video_name)
-        print(src_frames_dir, to_move_dir)
+        # print('move',video_name, src_frames_dir)
         if os.path.isdir(src_frames_dir):
+            print(src_frames_dir, to_move_dir)
             shutil.move(src_frames_dir, to_move_dir)
 
     print('Moved ', total_count, ' dirs')
@@ -119,13 +122,15 @@ def move_dirs(frames_dir, anno_files, anno_dir):
 if __name__ == '__main__':
     description = 'Helper script for updating cvs of kinetics dataset  after video trimming.'
     p = argparse.ArgumentParser(description=description)
-    p.add_argument('--frames_dir', type=str, default='/raid/susaha/datasets/ava-kinetics/kinetics/images/',
+    p.add_argument('--frames_dir', type=str, default='/raid/susaha/datasets/ava-kinetics/kinetics/train-images/',
                    help='Video directory where videos are saved.')
     args = p.parse_args()
     anno_files = ['kinetics_train_v1.0.csv', 'kinetics_val_v1.0.csv', 'kinetics_test_v1.0.csv']
+    anno_files = ['kinetics_train.csv', 'kinetics_val.csv', 'kinetics_test.csv']
     anno_dir = 'ava_kinetics_csv/'
-    update_csvs(args.frames_dir, anno_files, anno_dir)
-    #move_dirs(args.frames_dir, anno_files, anno_dir)
+    anno_dir = '/raid/susaha/datasets/ava-kinetics/kinetics/annotations/'
+    # update_csvs(args.frames_dir, anno_files, anno_dir)
+    move_dirs(args.frames_dir, anno_files, anno_dir)
 
          
 
